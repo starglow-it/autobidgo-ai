@@ -1,0 +1,259 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  user
+}
+
+enum UserStatus {
+  active
+  disabled
+  pending_profile
+}
+
+enum BatchStatus {
+  locked
+  available
+  in_progress
+  pending_review
+  approved
+  rejected
+}
+
+enum RecordingStatus {
+  not_started
+  pending_review
+  approved
+  rejected
+}
+
+enum BalanceTransactionType {
+  earning
+  withdrawal
+  adjustment
+}
+
+enum BalanceTransactionStatus {
+  pending
+  approved
+  paid
+  rejected
+}
+
+enum WithdrawalStatus {
+  pending
+  contacted
+  paid
+  rejected
+}
+
+model User {
+  id                String     @id @default(cuid())
+  role              UserRole   @default(user)
+  email             String?    @unique
+  phone             String?    @unique
+  passwordHash      String
+  mustChangePassword Boolean   @default(true)
+  isProfileComplete Boolean    @default(false)
+  status            UserStatus @default(pending_profile)
+  invitedByAdminId  String?
+
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  lastLoginAt       DateTime?
+
+  invitedByAdmin    User?      @relation("InvitedUsers", fields: [invitedByAdminId], references: [id])
+  invitedUsers      User[]     @relation("InvitedUsers")
+
+  profile           Profile?
+  batches           Batch[]
+  recordings        Recording[]
+  balance           Balance?
+  balanceTransactions BalanceTransaction[]
+  withdrawalRequests WithdrawalRequest[] @relation("UserWithdrawals")
+  withdrawalRequestsAsContact WithdrawalRequest[] @relation("ContactAdminWithdrawals")
+
+  reviewedRecordings Recording[] @relation("ReviewedBy")
+  adminContacts      AdminContact[]
+
+  @@index([role])
+}
+
+model Profile {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  firstName              String
+  lastName               String
+  birthday               DateTime
+  gender                 String
+  homeAddress            String
+  city                   String
+  state                  String
+  country                String
+  postalCode             String
+  email                  String
+  phone                  String
+  emergencyContactName   String
+  emergencyContactPhone  String
+
+  nativeLanguage         String?
+  otherLanguages         String?
+  accentDialect          String?
+  workAvailability       String?
+  notes                  String?
+
+  preferredPaymentMethod String
+  paymentAccountDetails  String
+
+  profilePhotoPath       String?
+  consentVoiceTraining   Boolean
+  consentAccurateInfo    Boolean
+
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Script {
+  id                      String   @id @default(cuid())
+  title                   String
+  body                    String
+  language                String
+  category                String
+  difficulty              String
+  estimatedDurationSeconds Int
+  batchNumber             Int
+  orderIndex              Int
+  isActive                Boolean  @default(true)
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  recordings              Recording[]
+
+  @@index([batchNumber, orderIndex])
+}
+
+model Batch {
+  id            String     @id @default(cuid())
+  userId        String
+  batchNumber   Int
+  status        BatchStatus @default(locked)
+  totalScripts  Int        @default(10)
+  submittedCount Int       @default(0)
+  approvedCount  Int       @default(0)
+  rejectedCount  Int       @default(0)
+  paymentAmount  Int       @default(20)
+  approvedAt     DateTime?
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recordings     Recording[]
+  balanceTransactions BalanceTransaction[]
+
+  @@unique([userId, batchNumber])
+}
+
+model Recording {
+  id             String          @id @default(cuid())
+  userId         String
+  scriptId       String
+  batchId        String
+  audioFilePath  String?
+  durationSeconds Int?
+  status         RecordingStatus @default(not_started)
+  rejectionReason String?
+  reviewedByAdminId String?
+  submittedAt    DateTime?
+  reviewedAt     DateTime?
+
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  script         Script          @relation(fields: [scriptId], references: [id], onDelete: Cascade)
+  batch          Batch           @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  reviewedByAdmin User?          @relation("ReviewedBy", fields: [reviewedByAdminId], references: [id])
+  balanceTransactions BalanceTransaction[]
+
+  @@unique([userId, scriptId, batchId])
+  @@index([status])
+}
+
+model Balance {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  availableBalance Int     @default(0)
+  pendingBalance   Int     @default(0)
+  lifetimeEarned   Int     @default(0)
+  lifetimePaid     Int     @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model BalanceTransaction {
+  id          String                   @id @default(cuid())
+  userId      String
+  recordingId String?
+  batchId     String?
+  type        BalanceTransactionType
+  amount      Int
+  status      BalanceTransactionStatus
+  description String?
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recording   Recording? @relation(fields: [recordingId], references: [id], onDelete: SetNull)
+  batch       Batch?    @relation(fields: [batchId], references: [id], onDelete: SetNull)
+
+  @@unique([recordingId, type])
+  @@index([userId, createdAt])
+}
+
+model WithdrawalRequest {
+  id            String          @id @default(cuid())
+  userId        String
+  amount        Int
+  status        WithdrawalStatus @default(pending)
+  contactAdminId String?
+  adminNote     String?
+  userMessage   String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation("UserWithdrawals", fields: [userId], references: [id], onDelete: Cascade)
+  contactAdmin  User?    @relation("ContactAdminWithdrawals", fields: [contactAdminId], references: [id], onDelete: SetNull)
+}
+
+model AdminContact {
+  id          String   @id @default(cuid())
+  adminId     String
+  displayName String
+  email       String
+  phone       String?
+  whatsapp    String?
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  admin       User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+}
+
+

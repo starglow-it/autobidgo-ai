@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  @apply bg-slate-950 text-slate-100;
+}
+
+/* subtle app background */
+.app-bg {
+  background:
+    radial-gradient(900px 500px at 10% 10%, rgba(107, 135, 255, 0.18), transparent 60%),
+    radial-gradient(900px 500px at 90% 20%, rgba(59, 74, 209, 0.16), transparent 55%),
+    radial-gradient(900px 600px at 60% 90%, rgba(46, 87, 255, 0.10), transparent 60%),
+    linear-gradient(180deg, #020617 0%, #0b1224 100%);
+}

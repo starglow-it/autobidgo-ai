@@ -1,0 +1,28 @@
+# dependencies
+node_modules
+
+# builds
+/dist
+/build
+
+# env
+.env
+
+# databases
+*.db
+*.db-journal
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+
+# uploads (keep local only)
+/server/uploads
+
+# vite
+/client/dist
+/client/.vite

@@ -1,0 +1,1262 @@
+```text
+You are a senior full-stack engineer and product designer. Build a professional AI voice training web application.
+
+Use this tech stack:
+
+- Frontend: React + Vite + TypeScript
+- Backend: Node.js + Express.js + TypeScript
+- Database: SQLite
+- ORM: Prisma or Drizzle
+- Auth: JWT or secure HTTP-only session cookies
+- Password hashing: bcrypt
+- UI: Tailwind CSS + shadcn/ui or another modern component system
+- File uploads: local server storage
+- Audio recording: Browser MediaRecorder API
+
+The app is an invite-only AI voice/data training platform. Users cannot register by themselves. There must be no public register page. Only admins can create users.
+
+The app should look elegant, sophisticated, modern, trustworthy, and professional. Think of a polished AI data platform, remote work portal, or contractor dashboard.
+
+==================================================
+CORE PRODUCT IDEA
+==================================================
+
+The platform allows invited users to log in, update their password, complete a profile, read short scripts aloud, record their voice, submit recordings, and earn money after admin approval.
+
+Main business rules:
+
+1. Users cannot register.
+2. Admin creates user accounts.
+3. Admin can create a user with email or phone number.
+4. Admin generates temporary credentials.
+5. Admin can copy credentials and send them to the user.
+6. User logs in with temporary credentials.
+7. On first login, user must change password.
+8. After changing password, user must complete profile.
+9. After profile completion, user can access voice training.
+10. User reads one script at a time.
+11. User records audio in the browser.
+12. User can replay before submitting.
+13. User submits recording.
+14. User moves to the next script only after submitting.
+15. One batch contains 10 scripts.
+16. One approved script pays $2.
+17. One fully approved batch of 10 scripts equals $20.
+18. After submitting 10 scripts, the next batch is locked until admin approval.
+19. Admin reviews recordings.
+20. Admin can listen to recordings.
+21. Admin can approve or reject recordings.
+22. Rejected recordings require re-recording.
+23. User balance increases only after approval.
+24. User can request withdrawal.
+25. When user clicks withdrawal, show the contact/admin who invited the user.
+
+==================================================
+ROLES
+==================================================
+
+Create two roles:
+
+1. Admin
+2. User
+
+Admin can:
+
+- Log in to admin dashboard
+- Create users
+- Enter email or phone number when creating a user
+- Generate temporary password
+- Copy login credentials
+- View all users
+- View user profile
+- View uploaded profile photo
+- View user progress
+- View submitted recordings
+- Play recordings in browser
+- Download recordings
+- Approve recordings
+- Reject recordings
+- Add rejection reason
+- Approve completed batches
+- Unlock next batch
+- See user balances
+- See withdrawal requests
+- Mark withdrawal as pending, contacted, paid, or rejected
+- Manage scripts
+- Create scripts
+- Edit scripts
+- Deactivate scripts
+- Assign scripts to batch numbers
+- View analytics dashboard
+
+User can:
+
+- Log in only
+- Change password on first login
+- Complete profile
+- Upload profile photo
+- View dashboard
+- Start training
+- Read script
+- Record audio
+- Preview recording
+- Re-record before submission
+- Submit recording
+- Move to next script
+- Complete 10-script batch
+- See progress
+- See approval status
+- See balance
+- Request withdrawal
+- See invitation contact person
+- Read About, FAQ, Help, Privacy, and Terms pages
+
+==================================================
+AUTHENTICATION FLOW
+==================================================
+
+There must be no register route and no register page.
+
+Routes:
+
+Public/user auth:
+
+- /login
+- /change-password
+- /profile-setup
+- /dashboard
+- /training
+- /balance
+- /withdraw
+
+Admin:
+
+- /admin/login
+- /admin/dashboard
+
+User login behavior:
+
+1. User enters email or phone number and password.
+2. If mustChangePassword is true, redirect to /change-password.
+3. After password change, if profile is incomplete, redirect to /profile-setup.
+4. After profile is complete, redirect to /dashboard.
+
+Admin login behavior:
+
+1. Admin logs in from /admin/login.
+2. Admin lands on /admin/dashboard.
+
+Security requirements:
+
+- Hash all passwords with bcrypt.
+- Never store plain text passwords.
+- Temporary password is shown only once after admin creates or resets a user.
+- Protect private routes.
+- Protect admin routes by role.
+- Users cannot access other users' data.
+- Validate all uploaded files.
+- Validate audio file type and size.
+- Validate photo file type and size.
+- Use secure error handling.
+- Do not expose password hashes in API responses.
+
+==================================================
+USER PROFILE FORM
+==================================================
+
+After first login and password update, user must complete profile before accessing training.
+
+Profile fields:
+
+Required:
+
+- First Name
+- Last Name
+- Birthday
+- Gender
+- Home Address
+- City
+- State or Province
+- Country
+- Postal Code
+- Email
+- Phone Number
+- Emergency Contact Name
+- Emergency Contact Phone
+- Preferred Payment Method
+- Payment Account Details
+- Profile Photo Upload
+- Consent checkbox: “I confirm that the information provided is accurate.”
+- Consent checkbox: “I agree that my voice recordings may be used for AI training and quality evaluation.”
+
+Optional:
+
+- Native Language
+- Other Languages Spoken
+- Accent or Dialect
+- Work Availability
+- Notes
+
+Profile page layout sections:
+
+- Personal Information
+- Contact Information
+- Address
+- Voice and Language Information
+- Payment Information
+- Consent and Agreement
+
+User cannot access /training until profile is complete.
+
+==================================================
+USER DASHBOARD
+==================================================
+
+Build a polished user dashboard with these cards:
+
+- Welcome back, [First Name]
+- Profile completion status
+- Current batch progress
+- Scripts completed
+- Scripts approved
+- Pending review count
+- Rejected count
+- Current available balance
+- Pending earnings
+- CTA: Start Reading
+- CTA: View Balance
+- CTA: Request Withdrawal
+
+Add explanation card:
+
+“Complete 10 approved scripts to unlock the next batch. Each approved script earns $2. Your recordings are reviewed for clarity, completeness, and script accuracy.”
+
+UI should use:
+
+- Modern cards
+- Rounded corners
+- Subtle shadows
+- Clean typography
+- Good spacing
+- Progress bars
+- Status badges
+- Calm professional colors
+
+==================================================
+TRAINING FLOW
+==================================================
+
+Route:
+
+- /training
+
+This is the main feature.
+
+User flow:
+
+1. User clicks Start Reading.
+2. App shows current assigned script.
+3. Display script title.
+4. Display script instructions.
+5. Display script body.
+6. Display estimated speaking time, usually around 1 minute.
+7. User clicks Start Recording.
+8. Browser asks microphone permission if needed.
+9. App records audio.
+10. Show recording timer.
+11. Show animated recording indicator or waveform.
+12. User clicks Stop Recording.
+13. User can play back recording.
+14. User can delete recording and record again.
+15. User clicks Submit Recording.
+16. Recording uploads to server.
+17. Status becomes pending_review.
+18. User sees confirmation.
+19. User clicks Next Script.
+20. Next script appears.
+21. Repeat until 10 scripts are submitted.
+22. After 10 submissions, batch becomes pending_review and next batch is locked.
+
+Important rules:
+
+- User cannot skip a script.
+- User cannot submit without recording.
+- User cannot move to next script before submitting current script.
+- User cannot access next batch until admin approval.
+- User can re-record only before submission unless recording is rejected.
+- If rejected, user can re-record that script.
+- If all 10 recordings are approved, batch is approved.
+- Approved scripts add $2 each to balance.
+- Prevent duplicate payment for the same recording.
+
+Recording UI should include:
+
+- Script card
+- Large readable script text
+- Microphone permission state
+- Recording timer
+- Start Recording button
+- Stop Recording button
+- Re-record button
+- Submit Recording button
+- Audio playback preview
+- Current progress: 4/10 completed
+- Status badge:
+  - Not Started
+  - Recording
+  - Pending Review
+  - Approved
+  - Rejected
+
+After completing 10 scripts, show:
+
+“You completed this batch. Your recordings are now under review. Once approved, your balance will be updated and your next batch will be unlocked.”
+
+==================================================
+BATCH AND PAYMENT LOGIC
+==================================================
+
+Each batch contains 10 scripts.
+
+Payment:
+
+- Approved script = $2
+- 10 approved scripts = $20
+
+Batch rules:
+
+- Batch 1 becomes available after profile completion.
+- User submits 10 scripts.
+- Admin reviews submissions.
+- Admin can approve or reject each recording.
+- Rejected recording requires re-recording.
+- Balance only increases for approved recordings.
+- If all 10 recordings are approved, unlock next batch.
+- Do not pay twice for same recording.
+- Keep balance transaction records.
+
+Batch statuses:
+
+- locked
+- available
+- in_progress
+- pending_review
+- approved
+- rejected
+
+Recording statuses:
+
+- not_started
+- pending_review
+- approved
+- rejected
+
+User-facing progress examples:
+
+- 3 / 10 scripts submitted
+- 7 / 10 approved
+- 2 recordings need revision
+- Batch pending admin approval
+- Next batch locked until approval
+
+==================================================
+BALANCE AND WITHDRAWAL
+==================================================
+
+Route:
+
+- /balance
+- /withdraw
+
+Balance page should show:
+
+- Available balance
+- Pending balance
+- Lifetime earned
+- Lifetime paid
+- Approved scripts count
+- Pending recordings count
+- Rejected recordings count
+- Payment history
+- Withdrawal history
+- Withdraw button
+
+When user clicks Withdraw:
+
+If balance is $0:
+
+Show:
+
+“You do not have an available balance yet.”
+
+If balance is greater than $0:
+
+Create a withdrawal request with status pending.
+
+Show:
+
+“To request payment, please contact your invitation manager.”
+
+Display contact person:
+
+- Name
+- Email
+- Phone
+- WhatsApp if available
+
+Withdrawal statuses:
+
+- pending
+- contacted
+- paid
+- rejected
+
+Admin can update withdrawal status.
+
+==================================================
+ADMIN DASHBOARD
+==================================================
+
+Route:
+
+- /admin/dashboard
+
+Admin dashboard should have overview cards:
+
+- Total users
+- Active users
+- Pending profiles
+- Pending recordings
+- Pending batches
+- Total approved recordings
+- Total payable balance
+- Withdrawal requests
+
+Admin dashboard should have navigation:
+
+- Overview
+- Users
+- Scripts
+- Recordings
+- Batches
+- Withdrawals
+- Settings
+
+==================================================
+ADMIN USER MANAGEMENT
+==================================================
+
+Routes:
+
+- /admin/users
+- /admin/users/new
+- /admin/users/:id
+
+Admin can:
+
+- Create user
+- Search users
+- Filter users by status
+- View user details
+- Disable user
+- Enable user
+- Reset password
+- Copy credentials
+- Assign inviting contact person
+- View profile completion
+- View user balance
+- View user recordings
+- View user batches
+- View user withdrawal requests
+
+Create user form:
+
+Required:
+
+- Email or phone number
+
+Optional:
+
+- First name
+- Last name
+- Assigned contact/admin
+
+The system should generate temporary password.
+
+After creating a user, show a credential card:
+
+Login URL:
+Email/Phone:
+Temporary Password:
+Instructions:
+Please log in, update your password, complete your profile, and begin your training tasks.
+
+Add button:
+
+- Copy Credentials
+
+Copied text should be clean and ready to send to user.
+
+==================================================
+ADMIN RECORDING REVIEW
+==================================================
+
+Routes:
+
+- /admin/recordings
+- /admin/recordings/:id
+
+Admin can:
+
+- See pending recordings
+- Filter by pending, approved, rejected
+- Search by user
+- Open recording details
+- See script text
+- See submitted user
+- See submission date
+- Play audio in browser
+- Download audio
+- Approve recording
+- Reject recording
+- Add rejection reason
+- Request re-recording
+
+Recording review page layout:
+
+Left side:
+
+- User information
+- Profile photo
+- Script title
+- Script body
+- Batch number
+- Script number
+
+Right side:
+
+- Audio player
+- Audio metadata
+- Submission status
+- Review buttons
+- Rejection reason textarea
+
+==================================================
+ADMIN BATCH REVIEW
+==================================================
+
+Routes:
+
+- /admin/batches
+- /admin/batches/:id
+
+Admin can:
+
+- See completed batches
+- See all 10 recordings in the batch
+- See approval count
+- See rejected count
+- Approve full batch if all recordings are valid
+- Reject specific recordings
+- Unlock next batch
+- Trigger balance update
+
+Important:
+
+- Batch approval should not double-pay recordings.
+- Use balance_transactions to prevent duplicate earnings.
+
+==================================================
+ADMIN SCRIPT MANAGEMENT
+==================================================
+
+Routes:
+
+- /admin/scripts
+- /admin/scripts/new
+- /admin/scripts/:id
+
+Admin can:
+
+- Create scripts
+- Edit scripts
+- Deactivate scripts
+- Reorder scripts
+- Assign script to batch number
+- Set language
+- Set category
+- Set difficulty
+- Set estimated duration
+
+Script fields:
+
+- title
+- body
+- language
+- category
+- difficulty
+- estimatedDurationSeconds
+- batchNumber
+- orderIndex
+- isActive
+
+Seed the app with at least 20 sample scripts.
+
+Each script should be about 1 minute of speaking.
+
+==================================================
+PUBLIC PAGES
+==================================================
+
+Create these pages:
+
+- /
+- /about
+- /faq
+- /help
+- /privacy
+- /terms
+- /login
+
+There should be no /register page.
+
+Homepage copy:
+
+Hero title:
+
+“Train AI with Your Voice”
+
+Hero subtitle:
+
+“Join an invite-only voice training program where contributors read short scripts, submit high-quality recordings, and help improve the next generation of AI systems.”
+
+CTA buttons:
+
+- Log In
+- Learn More
+
+Feature cards:
+
+1. Invite-Only Access
+“Accounts are created by authorized administrators to keep the training process secure and organized.”
+
+2. Simple Recording Workflow
+“Read each script, record your voice, preview your audio, and submit your work for review.”
+
+3. Transparent Earnings
+“Each approved script earns a fixed amount. Track your progress, approvals, and available balance in real time.”
+
+4. Quality Review
+“Recordings are reviewed to ensure clarity, accuracy, and consistency before approval.”
+
+About page should explain:
+
+- The platform collects high-quality voice recordings for AI training.
+- Contributors read short scripts.
+- Recordings are reviewed for quality.
+- The platform is invite-only.
+
+FAQ should include:
+
+- How do I join?
+- Why can’t I register?
+- How do I get login credentials?
+- Why do I need to update my password?
+- How much do I earn?
+- When can I withdraw?
+- Why was my recording rejected?
+- How do I record good audio?
+- Can I re-record a script?
+- How is my data used?
+- Who do I contact for payment?
+
+Help / Recording Guidelines should include:
+
+- Use a quiet room.
+- Speak clearly.
+- Read the full script.
+- Do not skip words.
+- Do not add extra words.
+- Keep microphone close but not too close.
+- Re-record if there is noise.
+- Submit only your own voice.
+- Do not use synthetic voice or text-to-speech.
+
+Privacy page should explain:
+
+- Profile data
+- Voice recordings
+- Payment information
+- Data usage for AI training
+- Admin review access
+- Data retention
+
+Terms page should explain:
+
+- Invite-only access
+- Accurate profile information required
+- Voice recordings must be original
+- Payments depend on approval
+- Fraudulent, synthetic, or low-quality submissions may be rejected
+
+==================================================
+DATABASE SCHEMA
+==================================================
+
+Use SQLite.
+
+Create tables:
+
+users:
+
+- id
+- role: admin or user
+- email
+- phone
+- passwordHash
+- mustChangePassword
+- isProfileComplete
+- status: active, disabled, pending_profile
+- invitedByAdminId
+- createdAt
+- updatedAt
+- lastLoginAt
+
+profiles:
+
+- id
+- userId
+- firstName
+- lastName
+- birthday
+- gender
+- homeAddress
+- city
+- state
+- country
+- postalCode
+- email
+- phone
+- emergencyContactName
+- emergencyContactPhone
+- nativeLanguage
+- otherLanguages
+- accentDialect
+- preferredPaymentMethod
+- paymentAccountDetails
+- profilePhotoPath
+- consentVoiceTraining
+- consentAccurateInfo
+- createdAt
+- updatedAt
+
+scripts:
+
+- id
+- title
+- body
+- language
+- category
+- difficulty
+- estimatedDurationSeconds
+- batchNumber
+- orderIndex
+- isActive
+- createdAt
+- updatedAt
+
+batches:
+
+- id
+- userId
+- batchNumber
+- status: locked, available, in_progress, pending_review, approved, rejected
+- totalScripts
+- submittedCount
+- approvedCount
+- rejectedCount
+- paymentAmount
+- approvedAt
+- createdAt
+- updatedAt
+
+recordings:
+
+- id
+- userId
+- scriptId
+- batchId
+- audioFilePath
+- durationSeconds
+- status: not_started, pending_review, approved, rejected
+- rejectionReason
+- reviewedByAdminId
+- submittedAt
+- reviewedAt
+- createdAt
+- updatedAt
+
+balances:
+
+- id
+- userId
+- availableBalance
+- pendingBalance
+- lifetimeEarned
+- lifetimePaid
+- createdAt
+- updatedAt
+
+balance_transactions:
+
+- id
+- userId
+- recordingId
+- batchId
+- type: earning, withdrawal, adjustment
+- amount
+- status: pending, approved, paid, rejected
+- description
+- createdAt
+
+withdrawal_requests:
+
+- id
+- userId
+- amount
+- status: pending, contacted, paid, rejected
+- contactAdminId
+- adminNote
+- userMessage
+- createdAt
+- updatedAt
+
+admin_contacts:
+
+- id
+- adminId
+- displayName
+- email
+- phone
+- whatsapp
+- isActive
+- createdAt
+- updatedAt
+
+==================================================
+API ROUTES
+==================================================
+
+Auth:
+
+POST /api/auth/login
+POST /api/auth/logout
+POST /api/auth/change-password
+GET  /api/auth/me
+
+Profile:
+
+GET  /api/profile/me
+PUT  /api/profile/me
+POST /api/profile/photo
+
+User dashboard:
+
+GET /api/user/dashboard
+GET /api/user/progress
+
+Training:
+
+GET  /api/training/current-script
+POST /api/training/start-batch
+POST /api/training/recordings
+GET  /api/training/recordings
+GET  /api/training/batch-status
+POST /api/training/next-script
+
+Balance and withdrawals:
+
+GET  /api/balance
+POST /api/withdrawals
+GET  /api/withdrawals/me
+
+Admin users:
+
+GET  /api/admin/users
+POST /api/admin/users
+GET  /api/admin/users/:id
+PUT  /api/admin/users/:id
+POST /api/admin/users/:id/reset-password
+POST /api/admin/users/:id/disable
+POST /api/admin/users/:id/enable
+
+Admin scripts:
+
+GET    /api/admin/scripts
+POST   /api/admin/scripts
+GET    /api/admin/scripts/:id
+PUT    /api/admin/scripts/:id
+DELETE /api/admin/scripts/:id
+
+Admin recordings:
+
+GET  /api/admin/recordings
+GET  /api/admin/recordings/:id
+POST /api/admin/recordings/:id/approve
+POST /api/admin/recordings/:id/reject
+
+Admin batches:
+
+GET  /api/admin/batches
+GET  /api/admin/batches/:id
+POST /api/admin/batches/:id/approve
+POST /api/admin/batches/:id/reject
+POST /api/admin/batches/:id/unlock-next
+
+Admin withdrawals:
+
+GET  /api/admin/withdrawals
+POST /api/admin/withdrawals/:id/status
+
+==================================================
+FRONTEND ROUTES
+==================================================
+
+Public:
+
+/
+ /about
+/faq
+/help
+/privacy
+/terms
+/login
+
+User:
+
+/change-password
+/profile-setup
+/dashboard
+/training
+/balance
+/withdraw
+/settings
+
+Admin:
+
+/admin/login
+/admin/dashboard
+/admin/users
+/admin/users/new
+/admin/users/:id
+/admin/scripts
+/admin/scripts/new
+/admin/recordings
+/admin/recordings/:id
+/admin/batches
+/admin/withdrawals
+
+==================================================
+PROJECT STRUCTURE
+==================================================
+
+Use this structure:
+
+/client
+  /src
+    /components
+    /pages
+    /layouts
+    /hooks
+    /lib
+    /api
+    /types
+    /styles
+
+/server
+  /src
+    /routes
+    /controllers
+    /middleware
+    /services
+    /db
+    /utils
+    /uploads
+      /photos
+      /recordings
+
+==================================================
+ENVIRONMENT VARIABLES
+==================================================
+
+Create .env.example:
+
+DATABASE_URL=file:./dev.db
+JWT_SECRET=change-me
+UPLOAD_DIR=./uploads
+PORT=4000
+CLIENT_URL=http://localhost:5173
+
+==================================================
+SEED DATA
+==================================================
+
+Create seed data:
+
+Default admin:
+
+email: admin@example.com
+password: Admin123!
+
+Create at least 20 sample scripts.
+
+Create one sample admin contact.
+
+Do not hardcode the admin password in production logic. Use only for local seed.
+
+==================================================
+UI DESIGN REQUIREMENTS
+==================================================
+
+The UI must be modern and polished.
+
+Use:
+
+- Responsive layout
+- Sidebar dashboard navigation
+- Clean header
+- Professional typography
+- Rounded cards
+- Soft shadows
+- Subtle gradients
+- Status badges
+- Progress bars
+- Empty states
+- Loading states
+- Toast notifications
+- Confirmation modals
+- Good mobile layout
+
+Design personality:
+
+- Elegant
+- Sophisticated
+- Calm
+- Trustworthy
+- Premium
+- Minimal
+- Professional
+
+Important pages:
+
+Login page:
+
+- Premium centered login card
+- No register link
+- Text: “Access is invite-only. Please use the credentials provided by your invitation manager.”
+
+Training page:
+
+- Distraction-free
+- Large readable script text
+- Clear recording controls
+- Timer
+- Audio preview
+- Progress indicator
+
+Admin recording page:
+
+- Review workflow should be fast
+- Audio player visible
+- Script text visible
+- Approve/reject buttons obvious
+
+==================================================
+ACCEPTANCE CRITERIA
+==================================================
+
+The project is complete only when:
+
+1. There is no public registration page.
+2. Admin can create users.
+3. Admin can create user with email or phone number.
+4. Admin can generate temporary password.
+5. Admin can copy credentials.
+6. User can log in with temporary credentials.
+7. User is forced to change password.
+8. User is forced to complete profile.
+9. User can upload profile photo.
+10. User can access dashboard after profile completion.
+11. User can start training.
+12. User can see one script at a time.
+13. User can record audio in browser.
+14. User can preview audio before submitting.
+15. User can submit recording.
+16. User can move to next script only after submission.
+17. User can complete exactly 10 scripts per batch.
+18. Next batch is locked until admin approval.
+19. Admin can listen to submitted recordings.
+20. Admin can approve recordings.
+21. Admin can reject recordings with reason.
+22. Rejected recordings require re-submission.
+23. Approved script adds $2 earning.
+24. Ten approved scripts show $20 balance.
+25. App prevents duplicate payment for same recording.
+26. User can request withdrawal.
+27. Withdrawal page shows invitation contact person.
+28. Admin can update withdrawal status.
+29. Admin can manage scripts.
+30. App includes About, FAQ, Help, Privacy, and Terms.
+31. UI is responsive and polished.
+32. Database persists all app data.
+33. Auth and role permissions are enforced.
+34. File uploads work.
+35. Audio playback works for users and admins.
+36. Seed data works.
+37. App can run locally with clear README instructions.
+
+==================================================
+README REQUIREMENTS
+==================================================
+
+Create README.md with:
+
+- Project overview
+- Tech stack
+- Setup instructions
+- Environment variables
+- Database migration instructions
+- Seed instructions
+- How to run backend
+- How to run frontend
+- Default admin login
+- Folder structure
+- Main features
+- Notes about audio uploads
+- Notes about invite-only user creation
+
+==================================================
+FINAL EXPECTATION
+==================================================
+
+Build this as a real MVP that can be run locally.
+
+Do not make a tiny demo.
+
+Implement the full workflow:
+
+Admin creates user → user logs in → user changes password → user completes profile → user records 10 scripts → admin reviews recordings → approved recordings update balance → user requests withdrawal → admin handles withdrawal.
+
+Focus on clean architecture, good UX, secure auth, reliable recording upload, and professional copywriting.
+```
+
+
+Yes. Use **AutoBidGo** as the main brand across all public pages.
+
+Add this section to your coding-agent prompt:
+
+```text
+Branding requirement:
+
+Use the brand name “AutoBidGo” throughout the entire application.
+
+The app title should be:
+
+AutoBidGo AI Training Platform
+
+Browser title:
+
+AutoBidGo | AI Training Platform
+
+User dashboard title:
+
+AutoBidGo Contributor Portal
+
+Admin dashboard title:
+
+AutoBidGo Admin Console
+
+Domain:
+
+autobidgo.com
+
+All public pages must be written specifically for AutoBidGo, including:
+
+- About
+- FAQ
+- Help
+- Privacy
+- Terms
+
+Do not use generic platform wording such as “this platform” everywhere. Use professional branded copy such as “AutoBidGo helps invited contributors complete AI voice training tasks through a secure, structured workflow.”
+
+Homepage hero:
+
+Title:
+Train AI with Your Voice
+
+Subtitle:
+AutoBidGo is an invite-only AI training platform where contributors read short scripts, submit high-quality voice recordings, and help improve the next generation of AI systems.
+
+Login page note:
+Access to AutoBidGo is invite-only. Please use the credentials provided by your invitation manager.
+
+About page copy:
+AutoBidGo is an invite-only AI training platform designed to collect high-quality voice recordings for artificial intelligence development. Contributors complete guided reading tasks, record their voice securely, and submit each recording for quality review. Every approved script helps improve AI systems while giving contributors a transparent way to track their progress and earnings.
+
+FAQ page must include AutoBidGo-branded questions:
+
+- What is AutoBidGo?
+- How do I join AutoBidGo?
+- Why can’t I register myself?
+- How do I get my login credentials?
+- Why do I need to change my password?
+- How much do I earn per script?
+- When can I withdraw my balance?
+- Why was my recording rejected?
+- How do I record high-quality audio?
+- Can I re-record a script?
+- How does AutoBidGo use my data?
+- Who do I contact for payment?
+
+Help page title:
+AutoBidGo Recording Guidelines
+
+Help page copy should explain:
+
+- Find a quiet place before recording.
+- Read the full script exactly as shown.
+- Speak naturally and clearly.
+- Do not skip, change, or add words.
+- Do not use text-to-speech or synthetic voice tools.
+- Preview your recording before submitting.
+- Re-record if there is background noise or mistakes.
+
+Privacy page should be branded as:
+
+AutoBidGo Privacy Policy
+
+Privacy page should explain in professional language:
+
+- AutoBidGo collects account information, profile details, uploaded photos, voice recordings, payment-related information, and usage activity.
+- Voice recordings may be reviewed by authorized admins for quality control.
+- Approved recordings may be used for AI training, evaluation, and improvement.
+- Personal information should be protected and only used for platform operation, contributor management, payment coordination, and legal compliance.
+- Users should contact their invitation manager for data or payment questions.
+
+Terms page should be branded as:
+
+AutoBidGo Terms of Service
+
+Terms page should explain:
+
+- AutoBidGo is invite-only.
+- Users must provide accurate profile information.
+- Users must submit only their own original voice recordings.
+- Users must not submit synthetic, manipulated, copied, or fraudulent audio.
+- Payments are based only on approved recordings.
+- AutoBidGo may reject low-quality, incomplete, inaccurate, or suspicious submissions.
+- Access may be disabled for misuse or policy violations.
+
+Use AutoBidGo consistently in navigation, footer, page headings, dashboard copy, email/credential instructions, and admin pages.
+```
