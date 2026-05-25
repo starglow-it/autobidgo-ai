@@ -57,6 +57,12 @@ export async function upsertMyProfile(req: Request, res: Response) {
   const birthday = new Date(data.birthday);
   if (Number.isNaN(birthday.getTime())) return res.status(400).json({ error: 'Invalid birthday' });
 
+  // Enforce profile photo requirement (uploaded via /api/profile/photo)
+  const existingProfile = await prisma.profile.findUnique({ where: { userId: req.auth.userId } });
+  if (!existingProfile?.profilePhotoPath) {
+    return res.status(400).json({ error: 'Profile photo is required' });
+  }
+
   const profile = await prisma.profile.upsert({
     where: { userId: req.auth.userId },
     update: {

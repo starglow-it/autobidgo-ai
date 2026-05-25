@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -6,6 +6,7 @@ import { apiFetch, apiFetchForm, apiUrl } from '../../api/http';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Textarea } from '../../components/ui/Textarea';
+import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -68,11 +69,15 @@ export function ProfileSetup() {
   const [profile, setProfile] = useState<Profile>(empty);
   const [loading, setLoading] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoVersion, setPhotoVersion] = useState(0);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const photoUrl = useMemo(() => {
     if (!user) return null;
-    return `${apiUrl()}/api/files/photos/${user.id}`;
-  }, [user]);
+    // cache-bust after upload so the preview updates immediately
+    return `${apiUrl()}/api/files/photos/${user.id}?v=${photoVersion}`;
+  }, [user, photoVersion]);
 
   useEffect(() => {
     (async () => {
@@ -97,6 +102,7 @@ export function ProfileSetup() {
       const form = new FormData();
       form.append('photo', file);
       await apiFetchForm('/api/profile/photo', form);
+      setPhotoVersion((v) => v + 1);
       toast.success('Photo uploaded');
     } catch (err: any) {
       toast.error(err.message || 'Photo upload failed');
@@ -142,23 +148,28 @@ export function ProfileSetup() {
               <div className="text-sm font-medium">Profile photo</div>
               <div className="text-xs text-slate-400">JPG, PNG, or WebP up to 5MB.</div>
             </div>
-            <div className="ml-auto">
-              <label className="inline-flex items-center">
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) uploadPhoto(f);
-                  }}
-                />
-                <span>
-                  <Button type="button" variant="secondary" disabled={photoUploading}>
-                    {photoUploading ? 'Uploading…' : 'Upload photo'}
-                  </Button>
-                </span>
-              </label>
+            <div className="ml-auto flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                id="autobidgo-photo"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) uploadPhoto(f);
+                  // allow selecting the same file again
+                  e.currentTarget.value = '';
+                }}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={photoUploading}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {photoUploading ? 'Uploading…' : 'Upload photo'}
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -188,7 +199,16 @@ export function ProfileSetup() {
             </div>
             <div>
               <label className="text-sm text-slate-300">Gender *</label>
-              <Input value={profile.gender} onChange={(e) => setProfile({ ...profile, gender: e.target.value })} />
+              <Select value={profile.gender} onChange={(e) => setProfile({ ...profile, gender: e.target.value })}>
+                <option value="" disabled>
+                  Select…
+                </option>
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
+                <option value="Non-binary">Non-binary</option>
+                <option value="Prefer not to say">Prefer not to say</option>
+                <option value="Other">Other</option>
+              </Select>
             </div>
           </CardContent>
         </Card>
@@ -299,19 +319,44 @@ export function ProfileSetup() {
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm text-slate-300">Preferred Payment Method *</label>
-              <Input
+              <Select
                 value={profile.preferredPaymentMethod}
                 onChange={(e) => setProfile({ ...profile, preferredPaymentMethod: e.target.value })}
-                placeholder="Bank transfer, PayPal, etc."
-              />
+              >
+                <option value="" disabled>
+                  Select…
+                </option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="PayPal">PayPal</option>
+                <option value="Wise">Wise</option>
+                <option value="Cash App">Cash App</option>
+                <option value="Venmo">Venmo</option>
+                <option value="Crypto">Crypto</option>
+                <option value="Other">Other</option>
+              </Select>
+              <div className="mt-1 text-xs text-slate-400">Choose the method you prefer for AutoBidGo payouts.</div>
             </div>
-            <div>
+            <div className="md:col-span-2">
               <label className="text-sm text-slate-300">Payment Account Details *</label>
-              <Input
+              <Textarea
+                rows={4}
                 value={profile.paymentAccountDetails}
                 onChange={(e) => setProfile({ ...profile, paymentAccountDetails: e.target.value })}
-                placeholder="Account / handle / routing details"
+                placeholder={
+                  profile.preferredPaymentMethod === 'PayPal'
+                    ? 'PayPal email, and any additional payout notes.'
+                    : profile.preferredPaymentMethod === 'Bank Transfer'
+                      ? 'Bank name, account name, account number/IBAN, routing/SWIFT, and country.'
+                      : profile.preferredPaymentMethod === 'Wise'
+                        ? 'Wise email/handle and currency preferences.'
+                        : profile.preferredPaymentMethod === 'Crypto'
+                          ? 'Network, wallet address, and preferred currency.'
+                          : 'Provide the exact details needed to send payment for this method.'
+                }
               />
+              <div className="mt-1 text-xs text-slate-400">
+                Enter complete details to avoid payout delays. Do not include passwords or one-time codes.
+              </div>
             </div>
           </CardContent>
         </Card>
